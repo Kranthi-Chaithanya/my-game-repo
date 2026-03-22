@@ -11,7 +11,6 @@ import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, auto
-from typing import Dict, List, Optional
 
 
 # ---------------------------------------------------------------------------
@@ -44,7 +43,7 @@ class EventType(Enum):
 # Event
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(slots=True)
 class Event:
     """A recorded interaction or world occurrence.
 
@@ -59,7 +58,7 @@ class Event:
     """
     event_type: EventType
     description: str
-    involved_npcs: List[str] = field(default_factory=list)
+    involved_npcs: list[str] = field(default_factory=list)
     outcome: str = ""
     player_involved: bool = False
     timestamp: datetime = field(default_factory=datetime.now)
@@ -70,7 +69,7 @@ class Event:
 # NPC
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(slots=True)
 class NPC:
     """Represents a crime figure in the Vice City world.
 
@@ -96,15 +95,15 @@ class NPC:
     nickname: str
     rank: Rank
     gang: str
-    traits: List[str] = field(default_factory=list)
-    strengths: List[str] = field(default_factory=list)
-    weaknesses: List[str] = field(default_factory=list)
-    appearance: Dict[str, str] = field(default_factory=dict)
+    traits: list[str] = field(default_factory=list)
+    strengths: list[str] = field(default_factory=list)
+    weaknesses: list[str] = field(default_factory=list)
+    appearance: dict[str, str] = field(default_factory=dict)
     alive: bool = True
     health: int = 100
     respect_level: int = 50
-    memory: List[str] = field(default_factory=list)          # event_ids
-    relationships: Dict[str, int] = field(default_factory=dict)
+    memory: list[str] = field(default_factory=list)          # event_ids
+    relationships: dict[str, int] = field(default_factory=dict)
     territory: str = "Unknown"
 
     # ------------------------------------------------------------------
@@ -136,7 +135,7 @@ class NPC:
 # Gang
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(slots=True)
 class Gang:
     """Represents a criminal organisation.
 
@@ -151,13 +150,13 @@ class Gang:
     """
     name: str
     color: str = "white"
-    territory: List[str] = field(default_factory=list)
-    members: List[str] = field(default_factory=list)      # npc_ids
-    hierarchy: List[str] = field(default_factory=list)    # ordered npc_ids
-    rival_gangs: List[str] = field(default_factory=list)
-    allied_gangs: List[str] = field(default_factory=list)
+    territory: list[str] = field(default_factory=list)
+    members: list[str] = field(default_factory=list)      # npc_ids
+    hierarchy: list[str] = field(default_factory=list)    # ordered npc_ids
+    rival_gangs: list[str] = field(default_factory=list)
+    allied_gangs: list[str] = field(default_factory=list)
 
-    def power_level(self, npcs: Dict[str, NPC]) -> int:
+    def power_level(self, npcs: dict[str, NPC]) -> int:
         """Compute overall gang strength from living members."""
         total = 0
         for npc_id in self.members:
@@ -181,7 +180,7 @@ class Gang:
 # District
 # ---------------------------------------------------------------------------
 
-@dataclass
+@dataclass(slots=True)
 class District:
     """Represents a city district / turf.
 
@@ -194,7 +193,7 @@ class District:
     name: str
     controlling_gang: str = "None"
     heat_level: int = 20
-    businesses: List[str] = field(default_factory=list)
+    businesses: list[str] = field(default_factory=list)
 
     def __repr__(self) -> str:
         return (

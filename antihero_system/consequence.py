@@ -9,14 +9,10 @@ and autonomous gang behaviour.
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Optional, TYPE_CHECKING
 
-from .models import District, Event, EventType, NPC, Rank
+from .models import District, Event, EventType, Gang, NPC, Rank
 from .hierarchy import HierarchyManager
 from .memory import MemoryManager
-
-if TYPE_CHECKING:
-    pass
 
 
 class ConsequenceEngine:
@@ -32,9 +28,9 @@ class ConsequenceEngine:
 
     def __init__(
         self,
-        gangs: Dict[str, Gang],
-        npcs: Dict[str, NPC],
-        districts: Dict[str, District],
+        gangs: dict[str, Gang],
+        npcs: dict[str, NPC],
+        districts: dict[str, District],
         hierarchy: HierarchyManager,
         memory: MemoryManager,
     ) -> None:
@@ -43,13 +39,13 @@ class ConsequenceEngine:
         self._districts = districts
         self._hierarchy = hierarchy
         self._memory = memory
-        self._revenge_queue: List[str] = []   # npc_ids ready to seek revenge
+        self._revenge_queue: set[str] = set()   # npc_ids ready to seek revenge
 
     # ------------------------------------------------------------------
     # Public API
     # ------------------------------------------------------------------
 
-    def process_event(self, event: Event) -> List[str]:
+    def process_event(self, event: Event) -> list[str]:
         """Apply all consequences of *event* to the world state.
 
         Args:
@@ -58,7 +54,7 @@ class ConsequenceEngine:
         Returns:
             A list of human-readable consequence strings.
         """
-        consequences: List[str] = []
+        consequences: list[str] = []
 
         if event.event_type == EventType.ASSASSINATION:
             consequences.extend(self._handle_assassination(event))
@@ -83,7 +79,7 @@ class ConsequenceEngine:
 
         return consequences
 
-    def check_revenge_triggers(self) -> List[str]:
+    def check_revenge_triggers(self) -> list[str]:
         """Scan all living NPCs for those ready to seek revenge on the player.
 
         An NPC is revenge-ready when their player relationship score drops
@@ -92,20 +88,20 @@ class ConsequenceEngine:
         Returns:
             List of revenge announcement strings.
         """
-        messages: List[str] = []
+        messages: list[str] = []
         for npc_id, npc in self._npcs.items():
             if not npc.alive:
                 continue
             score = npc.relationships.get("player", 0)
             if score < -50 and npc_id not in self._revenge_queue:
-                self._revenge_queue.append(npc_id)
+                self._revenge_queue.add(npc_id)
                 messages.append(
                     f"⚠  REVENGE: {npc.nickname} ({npc.name}) is coming for you! "
                     f"[{npc.gang} | {npc.rank.value}]"
                 )
         return messages
 
-    def update_world_state(self) -> List[str]:
+    def update_world_state(self) -> list[str]:
         """Advance one autonomous world-simulation tick.
 
         NPCs scheme, gangs expand, and new rivalries may form even without
@@ -114,7 +110,7 @@ class ConsequenceEngine:
         Returns:
             A list of world-update narrative strings.
         """
-        updates: List[str] = []
+        updates: list[str] = []
 
         # Random autonomous gang war (low probability each tick)
         if random.random() < 0.3:
@@ -158,8 +154,8 @@ class ConsequenceEngine:
     # Private handlers
     # ------------------------------------------------------------------
 
-    def _handle_assassination(self, event: Event) -> List[str]:
-        results: List[str] = []
+    def _handle_assassination(self, event: Event) -> list[str]:
+        results: list[str] = []
         for npc_id in event.involved_npcs:
             npc = self._npcs.get(npc_id)
             if not npc:
@@ -182,8 +178,8 @@ class ConsequenceEngine:
                 )
         return results
 
-    def _handle_defeat(self, event: Event) -> List[str]:
-        results: List[str] = []
+    def _handle_defeat(self, event: Event) -> list[str]:
+        results: list[str] = []
         for npc_id in event.involved_npcs:
             npc = self._npcs.get(npc_id)
             if not npc or not npc.alive:
@@ -192,7 +188,8 @@ class ConsequenceEngine:
             if random.random() < 0.5:
                 npc.respect_level = max(0, npc.respect_level - 5)
                 npc.health = max(10, npc.health - 30)
-                npc.traits.append("vengeful")
+                if "vengeful" not in npc.traits:
+                    npc.traits.append("vengeful")
                 results.append(
                     f"{npc.nickname} survived the encounter — scarred and furious, "
                     f"they vow to get even."
@@ -200,11 +197,11 @@ class ConsequenceEngine:
             # Queue for potential revenge
             if npc.relationships.get("player", 0) < -30:
                 if npc.npc_id not in self._revenge_queue:
-                    self._revenge_queue.append(npc.npc_id)
+                    self._revenge_queue.add(npc.npc_id)
         return results
 
-    def _handle_betrayal(self, event: Event) -> List[str]:
-        results: List[str] = []
+    def _handle_betrayal(self, event: Event) -> list[str]:
+        results: list[str] = []
         for npc_id in event.involved_npcs:
             npc = self._npcs.get(npc_id)
             if not npc or not npc.alive:
@@ -220,10 +217,13 @@ class ConsequenceEngine:
                     new_gang = self._gangs.get(new_gang_name)
                     if new_gang:
                         # Move NPC to new gang
-                        if npc.npc_id in (current_gang.members or []):
+                        if npc.npc_id in current_gang.members:
                             current_gang.members.remove(npc.npc_id)
+                        if npc.npc_id in current_gang.hierarchy:
+                            current_gang.hierarchy.remove(npc.npc_id)
                         npc.gang = new_gang_name
                         new_gang.members.append(npc.npc_id)
+                        new_gang.hierarchy.append(npc.npc_id)
                         npc.rank = Rank.ENFORCER  # start fresh
                         results.append(
                             f"DEFECTION: {npc.nickname} has abandoned {old_gang} "
@@ -231,8 +231,8 @@ class ConsequenceEngine:
                         )
         return results
 
-    def _handle_alliance(self, event: Event) -> List[str]:
-        results: List[str] = []
+    def _handle_alliance(self, event: Event) -> list[str]:
+        results: list[str] = []
         for npc_id in event.involved_npcs:
             npc = self._npcs.get(npc_id)
             if not npc or not npc.alive:
@@ -243,10 +243,10 @@ class ConsequenceEngine:
             )
         return results
 
-    def _handle_turf_war(self, event: Event) -> List[str]:
+    def _handle_turf_war(self, event: Event) -> list[str]:
         # Territory changes are handled by HierarchyManager.gang_war;
         # here we just update heat levels and note the consequence.
-        results: List[str] = []
+        results: list[str] = []
         for dname, district in self._districts.items():
             if event.description and dname in event.description:
                 district.heat_level = min(100, district.heat_level + 15)
@@ -256,8 +256,8 @@ class ConsequenceEngine:
                 )
         return results
 
-    def _handle_bribe(self, event: Event) -> List[str]:
-        results: List[str] = []
+    def _handle_bribe(self, event: Event) -> list[str]:
+        results: list[str] = []
         for npc_id in event.involved_npcs:
             npc = self._npcs.get(npc_id)
             if not npc or not npc.alive:
@@ -270,8 +270,8 @@ class ConsequenceEngine:
             )
         return results
 
-    def _handle_intimidation(self, event: Event) -> List[str]:
-        results: List[str] = []
+    def _handle_intimidation(self, event: Event) -> list[str]:
+        results: list[str] = []
         for npc_id in event.involved_npcs:
             npc = self._npcs.get(npc_id)
             if not npc or not npc.alive:

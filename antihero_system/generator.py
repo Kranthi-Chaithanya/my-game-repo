@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import random
 import uuid
-from typing import Dict, List, Tuple
 
 from .models import District, Gang, NPC, Rank
 
@@ -70,7 +69,7 @@ _CUBAN_LAST = [
 ]
 
 # Mapping: gang name → (first-name pool, last-name pool)
-_GANG_NAME_POOLS: Dict[str, Tuple[List[str], List[str]]] = {
+_GANG_NAME_POOLS: dict[str, tuple[list[str], list[str]]] = {
     "Diaz Cartel": (_LATIN_FIRST, _LATIN_LAST),
     "Vercetti Gang": (_ITALIAN_FIRST, _ITALIAN_LAST),
     "Haitians": (_HAITIAN_FIRST, _HAITIAN_LAST),
@@ -236,7 +235,7 @@ def generate_npc(rank: Rank, gang: str) -> NPC:
     )
 
 
-def generate_gang(name: str) -> Tuple[Gang, List[NPC]]:
+def generate_gang(name: str) -> tuple[Gang, list[NPC]]:
     """Create a full gang with a complete hierarchy.
 
     Hierarchy composition:
@@ -262,9 +261,9 @@ def generate_gang(name: str) -> Tuple[Gang, List[NPC]]:
     }
     color = gang_colors.get(name, "white")
 
-    npcs: List[NPC] = []
+    npcs: list[NPC] = []
 
-    def _make(rank: Rank, count: int) -> List[NPC]:
+    def _make(rank: Rank, count: int) -> list[NPC]:
         return [generate_npc(rank, name) for _ in range(count)]
 
     bosses = _make(Rank.BOSS, 1)
@@ -277,7 +276,7 @@ def generate_gang(name: str) -> Tuple[Gang, List[NPC]]:
     npcs.extend(all_members)
 
     # Assign territory placeholder (real territory assigned by generate_vice_city)
-    territory_placeholder: List[str] = []
+    territory_placeholder: list[str] = []
 
     gang = Gang(
         name=name,
@@ -317,7 +316,7 @@ def generate_district(name: str) -> District:
     )
 
 
-def generate_vice_city() -> Tuple[Dict[str, Gang], Dict[str, NPC], Dict[str, District]]:
+def generate_vice_city() -> tuple[dict[str, Gang], dict[str, NPC], dict[str, District]]:
     """Bootstrap a complete Vice City world.
 
     Creates all five canonical gangs with their hierarchies, assigns
@@ -329,8 +328,8 @@ def generate_vice_city() -> Tuple[Dict[str, Gang], Dict[str, NPC], Dict[str, Dis
     """
     gang_names = ["Diaz Cartel", "Vercetti Gang", "Haitians", "Cubans", "Bikers"]
 
-    gangs: Dict[str, Gang] = {}
-    all_npcs: Dict[str, NPC] = {}
+    gangs: dict[str, Gang] = {}
+    all_npcs: dict[str, NPC] = {}
 
     for gname in gang_names:
         gang, npcs = generate_gang(gname)
@@ -339,7 +338,7 @@ def generate_vice_city() -> Tuple[Dict[str, Gang], Dict[str, NPC], Dict[str, Dis
             all_npcs[npc.npc_id] = npc
 
     # Generate districts
-    districts: Dict[str, District] = {}
+    districts: dict[str, District] = {}
     for dname in VICE_CITY_DISTRICTS:
         districts[dname] = generate_district(dname)
 

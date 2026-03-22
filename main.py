@@ -9,7 +9,6 @@ Run with:
 from __future__ import annotations
 
 import sys
-from typing import Optional
 
 try:
     import colorama
@@ -85,7 +84,7 @@ def consequence_line(text: str) -> None:
 # NPC selection helper
 # ---------------------------------------------------------------------------
 
-def pick_npc(engine: AntiHeroEngine, prompt: str = "Select NPC") -> Optional[str]:
+def pick_npc(engine: AntiHeroEngine, prompt: str = "Select NPC") -> str | None:
     """Display a numbered list of living NPCs and return the chosen npc_id."""
     npcs = engine.list_npcs(alive_only=True)
     if not npcs:

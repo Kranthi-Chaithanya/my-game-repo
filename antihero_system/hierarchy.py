@@ -8,7 +8,6 @@ of the full gang hierarchy tree.
 from __future__ import annotations
 
 import random
-from typing import Dict, List, Optional, Tuple
 
 from .models import District, Gang, NPC, Rank
 
@@ -29,14 +28,14 @@ def _rank_index(rank: Rank) -> int:
         return len(_RANK_ORDER)
 
 
-def _next_rank_up(rank: Rank) -> Optional[Rank]:
+def _next_rank_up(rank: Rank) -> Rank | None:
     idx = _rank_index(rank)
     if idx > 0:
         return _RANK_ORDER[idx - 1]
     return None
 
 
-def _next_rank_down(rank: Rank) -> Optional[Rank]:
+def _next_rank_down(rank: Rank) -> Rank | None:
     idx = _rank_index(rank)
     if idx < len(_RANK_ORDER) - 1:
         return _RANK_ORDER[idx + 1]
@@ -54,9 +53,9 @@ class HierarchyManager:
 
     def __init__(
         self,
-        gangs: Dict[str, Gang],
-        npcs: Dict[str, NPC],
-        districts: Dict[str, District],
+        gangs: dict[str, Gang],
+        npcs: dict[str, NPC],
+        districts: dict[str, District],
     ) -> None:
         self._gangs = gangs
         self._npcs = npcs
@@ -66,7 +65,7 @@ class HierarchyManager:
     # Promotion / Demotion
     # ------------------------------------------------------------------
 
-    def promote_npc(self, npc_id: str) -> Optional[str]:
+    def promote_npc(self, npc_id: str) -> str | None:
         """Promote *npc_id* one rank within their gang.
 
         Returns:
@@ -81,12 +80,13 @@ class HierarchyManager:
         old_rank = npc.rank
         npc.rank = new_rank
         npc.respect_level = min(100, npc.respect_level + 10)
+        self._refresh_hierarchy(npc.gang)
         return (
             f"{npc.nickname} ({npc.name}) has been promoted from "
             f"{old_rank.value} to {new_rank.value} in {npc.gang}!"
         )
 
-    def demote_npc(self, npc_id: str) -> Optional[str]:
+    def demote_npc(self, npc_id: str) -> str | None:
         """Demote *npc_id* one rank within their gang.
 
         Returns:
@@ -101,16 +101,29 @@ class HierarchyManager:
         old_rank = npc.rank
         npc.rank = new_rank
         npc.respect_level = max(0, npc.respect_level - 10)
+        self._refresh_hierarchy(npc.gang)
         return (
             f"{npc.nickname} ({npc.name}) has been demoted from "
             f"{old_rank.value} to {new_rank.value} in {npc.gang}."
+        )
+
+    def _refresh_hierarchy(self, gang_name: str) -> None:
+        """Re-sort the gang's hierarchy list by rank (boss first)."""
+        gang = self._gangs.get(gang_name)
+        if not gang:
+            return
+        gang.hierarchy.sort(
+            key=lambda nid: (
+                _rank_index(self._npcs[nid].rank) if nid in self._npcs else 999,
+                -(self._npcs[nid].respect_level if nid in self._npcs else 0),
+            )
         )
 
     # ------------------------------------------------------------------
     # Power vacuum
     # ------------------------------------------------------------------
 
-    def fill_power_vacuum(self, gang_name: str, vacant_rank: Rank) -> Optional[str]:
+    def fill_power_vacuum(self, gang_name: str, vacant_rank: Rank) -> str | None:
         """Promote the most suitable NPC to fill a vacant rank.
 
         The best candidate is the highest-ranking living NPC below the
@@ -131,7 +144,7 @@ class HierarchyManager:
 
         # Gather candidates: living members ranked *below* vacant_rank
         vacant_idx = _rank_index(vacant_rank)
-        candidates: List[NPC] = []
+        candidates: list[NPC] = []
         for npc_id in gang.members:
             npc = self._npcs.get(npc_id)
             if npc and npc.alive and _rank_index(npc.rank) > vacant_idx:
@@ -170,7 +183,7 @@ class HierarchyManager:
         gang1_name: str,
         gang2_name: str,
         district_name: str,
-    ) -> Tuple[str, List[str]]:
+    ) -> tuple[str, list[str]]:
         """Simulate a turf war between two gangs over a district.
 
         Power levels determine the winner with some randomness.  Casualties
@@ -212,7 +225,7 @@ class HierarchyManager:
         living_losers.sort(key=lambda n: -_rank_index(n.rank))  # dealers first
         num_casualties = min(len(living_losers), random.randint(1, 3))
         casualties = living_losers[:num_casualties]
-        casualty_ids: List[str] = []
+        casualty_ids: list[str] = []
         for c in casualties:
             c.alive = False
             c.health = 0
@@ -272,7 +285,7 @@ class HierarchyManager:
             return f"Gang '{gang_name}' not found."
 
         lines = [f"=== {gang_name} Hierarchy ==="]
-        rank_groups: Dict[Rank, List[NPC]] = {r: [] for r in _RANK_ORDER}
+        rank_groups: dict[Rank, list[NPC]] = {r: [] for r in _RANK_ORDER}
 
         for npc_id in gang.members:
             npc = self._npcs.get(npc_id)
