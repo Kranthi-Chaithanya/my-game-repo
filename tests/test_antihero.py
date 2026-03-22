@@ -285,6 +285,25 @@ class TestHierarchySystem:
         assert "Vercetti Gang" in display
         assert "Boss" in display
 
+    def test_hierarchy_reorders_after_promotion(self, vice_city):
+        gangs, npcs, districts = vice_city
+        hm = HierarchyManager(gangs, npcs, districts)
+        gang_name = "Diaz Cartel"
+        gang = gangs[gang_name]
+
+        # Find a dealer and promote them
+        dealer = next(
+            (npcs[nid] for nid in gang.members if npcs[nid].rank == Rank.DEALER and npcs[nid].alive),
+            None,
+        )
+        assert dealer is not None
+        hm.promote_npc(dealer.npc_id)
+
+        # Verify hierarchy is sorted by rank
+        from antihero_system.hierarchy import _rank_index
+        ranks_in_order = [_rank_index(npcs[nid].rank) for nid in gang.hierarchy if nid in npcs]
+        assert ranks_in_order == sorted(ranks_in_order)
+
 
 # ===========================================================================
 # 4. Consequence Engine
@@ -361,6 +380,24 @@ class TestConsequenceEngine:
         gangs, npcs, districts, mm, hm, ce = self._make_engine_components(vice_city)
         updates = ce.update_world_state()
         assert isinstance(updates, list)
+
+    def test_defeat_does_not_duplicate_vengeful_trait(self, vice_city):
+        gangs, npcs, districts, mm, hm, ce = self._make_engine_components(vice_city)
+        npc = next((n for n in npcs.values() if n.alive), None)
+        assert npc is not None
+        # Remove existing vengeful if present
+        npc.traits = [t for t in npc.traits if t != "vengeful"]
+
+        for _ in range(5):
+            event = Event(
+                event_type=EventType.DEFEAT,
+                description="Player defeated NPC",
+                involved_npcs=[npc.npc_id],
+                player_involved=True,
+            )
+            ce.process_event(event)
+
+        assert npc.traits.count("vengeful") <= 1
 
 
 # ===========================================================================

@@ -8,7 +8,6 @@ strings populated from NPC data and event history.
 from __future__ import annotations
 
 import random
-from typing import List, Optional
 
 from .models import Event, EventType, NPC
 
@@ -98,7 +97,7 @@ class DialogueGenerator:
     # Public API
     # ------------------------------------------------------------------
 
-    def generate_greeting(self, npc: NPC, player_history: List[Event]) -> str:
+    def generate_greeting(self, npc: NPC, player_history: list[Event]) -> str:
         """Generate an NPC greeting based on their relationship with the player.
 
         Args:
@@ -122,7 +121,7 @@ class DialogueGenerator:
         template = random.choice(pool)
         return self._fill(template, npc, player_history)
 
-    def generate_threat(self, npc: NPC, player_history: List[Event]) -> str:
+    def generate_threat(self, npc: NPC, player_history: list[Event]) -> str:
         """Generate a personalised threat referencing past confrontations.
 
         Args:
@@ -135,7 +134,7 @@ class DialogueGenerator:
         template = random.choice(_THREATS)
         return self._fill(template, npc, player_history)
 
-    def generate_taunt(self, npc: NPC, event: Optional[Event] = None) -> str:
+    def generate_taunt(self, npc: NPC, event: Event | None = None) -> str:
         """Generate a victory taunt after the NPC defeats the player.
 
         Args:
@@ -147,10 +146,10 @@ class DialogueGenerator:
         """
         base = random.choice(_TAUNTS)
         flavor = random.choice(_VICE_CITY_FLAVOR)
-        history: List[Event] = [event] if event else []
+        history: list[Event] = [event] if event else []
         return f'{self._fill(base, npc, history)}  "{flavor}"'
 
-    def generate_respect(self, npc: NPC, player_history: List[Event]) -> str:
+    def generate_respect(self, npc: NPC, player_history: list[Event]) -> str:
         """Generate respectful dialogue for when the NPC acknowledges the player.
 
         Args:
@@ -179,7 +178,7 @@ class DialogueGenerator:
     # Internal helpers
     # ------------------------------------------------------------------
 
-    def _fill(self, template: str, npc: NPC, history: List[Event]) -> str:
+    def _fill(self, template: str, npc: NPC, history: list[Event]) -> str:
         """Substitute template placeholders with NPC-specific values.
 
         Supported placeholders:

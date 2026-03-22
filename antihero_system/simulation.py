@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import random
 import uuid
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .consequence import ConsequenceEngine
 from .dialogue import DialogueGenerator
@@ -46,9 +46,9 @@ class AntiHeroEngine:
     """
 
     def __init__(self) -> None:
-        self.gangs: Dict[str, Gang]
-        self.npcs: Dict[str, NPC]
-        self.districts: Dict[str, District]
+        self.gangs: dict[str, Gang]
+        self.npcs: dict[str, NPC]
+        self.districts: dict[str, District]
 
         self.gangs, self.npcs, self.districts = generate_vice_city()
 
@@ -70,7 +70,7 @@ class AntiHeroEngine:
         action_type: str,
         target_npc_id: str,
         **kwargs: Any,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Process a player action against a target NPC.
 
         Args:
@@ -117,7 +117,7 @@ class AntiHeroEngine:
     # World simulation
     # ------------------------------------------------------------------
 
-    def advance_time(self) -> List[str]:
+    def advance_time(self) -> list[str]:
         """Simulate one world time step.
 
         NPCs act autonomously, gang wars may break out, and hierarchy
@@ -134,7 +134,7 @@ class AntiHeroEngine:
     # Information queries
     # ------------------------------------------------------------------
 
-    def get_world_state(self) -> Dict[str, Any]:
+    def get_world_state(self) -> dict[str, Any]:
         """Return a snapshot of the current world state.
 
         Returns:
@@ -165,14 +165,14 @@ class AntiHeroEngine:
             "npc_count": len(self.npcs),
         }
 
-    def get_active_rivals(self) -> List[NPC]:
+    def get_active_rivals(self) -> list[NPC]:
         """Return all living NPCs who are actively hostile to the player."""
         return [
             npc for npc in self.npcs.values()
             if npc.alive and npc.is_hostile_to_player()
         ]
 
-    def get_potential_allies(self) -> List[NPC]:
+    def get_potential_allies(self) -> list[NPC]:
         """Return all living NPCs who are open to alliance with the player."""
         return [
             npc for npc in self.npcs.values()
@@ -180,7 +180,7 @@ class AntiHeroEngine:
             and not npc.is_hostile_to_player()
         ]
 
-    def get_npc_info(self, npc_id: str) -> Optional[Dict[str, Any]]:
+    def get_npc_info(self, npc_id: str) -> dict[str, Any] | None:
         """Return a detailed NPC profile including history and relationships.
 
         Args:
@@ -271,7 +271,7 @@ class AntiHeroEngine:
         lines.append("=" * 60)
         return "\n".join(lines)
 
-    def list_npcs(self, gang_name: Optional[str] = None, alive_only: bool = True) -> List[NPC]:
+    def list_npcs(self, gang_name: str | None = None, alive_only: bool = True) -> list[NPC]:
         """Return NPCs, optionally filtered by gang and alive status.
 
         Args:

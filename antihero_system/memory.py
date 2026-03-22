@@ -7,7 +7,6 @@ query their personal history to decide how to react to the player.
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional
 
 from .models import Event, EventType, NPC
 
@@ -18,7 +17,7 @@ from .models import Event, EventType, NPC
 # Positive = NPC respects/likes the player more.
 # Negative = NPC hates the player more.
 
-_RIVALRY_DELTAS: Dict[EventType, int] = {
+_RIVALRY_DELTAS: dict[EventType, int] = {
     EventType.DEFEAT: -25,          # player beat the NPC
     EventType.VICTORY: +15,         # NPC beat the player (they enjoy it)
     EventType.BETRAYAL: -40,        # player betrayed the NPC
@@ -42,9 +41,9 @@ class MemoryManager:
               NPC memory lists whenever a relevant event is recorded.
     """
 
-    def __init__(self, npcs: Dict[str, NPC]) -> None:
-        self._events: Dict[str, Event] = {}          # event_id → Event
-        self._player_events: List[str] = []          # event_ids involving player
+    def __init__(self, npcs: dict[str, NPC]) -> None:
+        self._events: dict[str, Event] = {}          # event_id → Event
+        self._player_events: list[str] = []          # event_ids involving player
         self._npcs = npcs
 
     # ------------------------------------------------------------------
@@ -73,11 +72,11 @@ class MemoryManager:
                     delta = _RIVALRY_DELTAS.get(event.event_type, 0)
                     npc.adjust_player_relationship(delta)
 
-    def get_event(self, event_id: str) -> Optional[Event]:
+    def get_event(self, event_id: str) -> Event | None:
         """Return the :class:`~antihero_system.models.Event` for *event_id*."""
         return self._events.get(event_id)
 
-    def get_npc_history(self, npc_id: str) -> List[Event]:
+    def get_npc_history(self, npc_id: str) -> list[Event]:
         """Return all events that *npc_id* personally remembers.
 
         Args:
@@ -93,7 +92,7 @@ class MemoryManager:
         events = [self._events[eid] for eid in npc.memory if eid in self._events]
         return sorted(events, key=lambda e: e.timestamp)
 
-    def get_player_history(self) -> List[Event]:
+    def get_player_history(self) -> list[Event]:
         """Return all player-involved events, oldest first."""
         events = [self._events[eid] for eid in self._player_events if eid in self._events]
         return sorted(events, key=lambda e: e.timestamp)
@@ -138,6 +137,6 @@ class MemoryManager:
         else:
             return f'"{name}" hates you with a passion and is actively plotting revenge.'
 
-    def all_events(self) -> List[Event]:
+    def all_events(self) -> list[Event]:
         """Return every recorded event, oldest first."""
         return sorted(self._events.values(), key=lambda e: e.timestamp)
